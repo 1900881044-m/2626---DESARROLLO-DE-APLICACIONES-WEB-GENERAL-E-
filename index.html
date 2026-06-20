@@ -5,187 +5,403 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Cafetería Aroma de Café</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f5e6ca;
-            margin: 0;
-            padding: 0;
+            background-color: #f8f4ef;
         }
 
         header {
-            background-color: #6f4e37;
+            background: linear-gradient(rgba(111, 78, 55, 0.8),
+                    rgba(111, 78, 55, 0.8)),
+                url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200');
+            background-size: cover;
+            background-position: center;
             color: white;
-            text-align: center;
-            padding: 20px;
-        }
-
-        nav {
-            background-color: #8b4513;
-            padding: 10px;
+            padding: 100px 20px;
             text-align: center;
         }
 
-        nav a {
-            color: white;
-            text-decoration: none;
-            margin: 15px;
+        header h1 {
+            font-size: 3rem;
             font-weight: bold;
         }
 
-        main {
-            padding: 20px;
-        }
-
-        section {
-            background-color: white;
-            margin: 20px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 8px gray;
-        }
-
-        h2 {
+        .titulo-seccion {
             color: #6f4e37;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
 
-        img {
-            width: 400px;
-            max-width: 100%;
-            border-radius: 10px;
+        .card {
+            transition: 0.3s;
+            border: none;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .btn-cafe {
+            background-color: #6f4e37;
+            color: white;
+        }
+
+        .btn-cafe:hover {
+            background-color: #8b4513;
+            color: white;
         }
 
         aside {
             background-color: #fff3cd;
-            padding: 15px;
-            margin: 20px;
-            border-left: 5px solid #ffcc00;
+            border-left: 6px solid #ffc107;
+            border-radius: 10px;
         }
 
         footer {
             background-color: #6f4e37;
             color: white;
             text-align: center;
-            padding: 15px;
-            margin-top: 20px;
-        }
-
-        ul {
-            text-align: left;
-            display: inline-block;
+            padding: 20px;
         }
 
         iframe {
             width: 100%;
-            max-width: 700px;
             height: 400px;
-            border: none;
+            border-radius: 10px;
+        }
+
+        /* Media Query */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            header {
+                padding: 60px 15px;
+            }
         }
     </style>
+
 </head>
 
 <body>
 
-    <header>
-        <h1>Cafetería Aroma de Café</h1>
-        <p>El mejor café y ambiente acogedor para compartir momentos especiales.</p>
+    <!-- HEADER -->
+    <header id="inicio">
+        <div class="container">
+            <h1>Cafetería Aroma de Café</h1>
+            <p class="lead">
+                El mejor café y ambiente acogedor para compartir momentos especiales.
+            </p>
+
+            <a href="#productos" class="btn btn-warning btn-lg m-2">
+                Ver Productos
+            </a>
+
+            <a href="#contacto" class="btn btn-light btn-lg m-2">
+                Contáctanos
+            </a>
+        </div>
     </header>
 
-    <nav>
-        <a href="#inicio">Inicio</a>
-        <a href="#quienes">Quiénes Somos</a>
-        <a href="#productos">Servicios o Productos</a>
-        <a href="#contacto">Contacto</a>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+
+            <a class="navbar-brand" href="#">
+                ☕ Aroma de Café
+            </a>
+
+            <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#menu">
+
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menu">
+
+                <ul class="navbar-nav ms-auto">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#inicio">Inicio</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#quienes">Quiénes Somos</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#productos">Productos</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contacto">Contacto</a>
+                    </li>
+
+                </ul>
+
+            </div>
+
+        </div>
     </nav>
 
     <main>
 
-        <section id="inicio">
-            <h2>Inicio</h2>
-            <p>
-                Bienvenidos a Cafetería Aroma de Café. Somos un emprendimiento dedicado
-                a ofrecer café de excelente calidad, bebidas especiales y deliciosos
-                acompañamientos en un ambiente agradable y familiar.
-            </p>
+        <!-- INICIO -->
+        <section class="container my-5">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-6">
+                    <h2 class="titulo-seccion">
+                        Bienvenidos a Aroma de Café
+                    </h2>
+
+                    <p>
+                        Somos una cafetería dedicada a brindar experiencias únicas
+                        a través de bebidas elaboradas con ingredientes de calidad,
+                        un ambiente acogedor y una atención personalizada para todos
+                        nuestros clientes.
+                    </p>
+
+                    <a href="#contacto" class="btn btn-cafe">
+                        Más información
+                    </a>
+                </div>
+
+                <div class="col-md-6 text-center">
+                    <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800"
+                        class="img-fluid rounded shadow"
+                        alt="Café">
+                </div>
+
+            </div>
+
         </section>
 
-        <section id="quienes">
-            <h2>Quiénes Somos</h2>
+        <!-- QUIENES SOMOS -->
+        <section id="quienes" class="container my-5">
 
-            <article>
-                <p>
-                    Cafetería Aroma de Café es un emprendimiento creado con el objetivo de brindar
-                    a nuestros clientes una experiencia única a través del sabor y aroma del café.
-                    Nuestro proyecto nace de la pasión por ofrecer productos de calidad elaborados
-                    con ingredientes seleccionados cuidadosamente. Además de servir café tradicional,
-                    ofrecemos bebidas especiales, postres y bocadillos que complementan cada visita.
-                    Buscamos crear un ambiente cómodo y acogedor donde estudiantes, trabajadores,
-                    familias y amigos puedan compartir momentos agradables. Nuestro compromiso es
-                    brindar una excelente atención al cliente, promover el consumo de productos de
-                    calidad y contribuir al desarrollo económico local mediante un servicio responsable,
-                    innovador y orientado a satisfacer las necesidades de cada persona que nos visita.
-                </p>
+            <h2 class="titulo-seccion text-center">
+                Quiénes Somos
+            </h2>
 
-                <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800"
-                    alt="Cafetería Aroma de Café">
-            </article>
+            <div class="row align-items-center">
+
+                <article class="col-md-6">
+
+                    <p>
+                        Cafetería Aroma de Café es un emprendimiento creado con el
+                        objetivo de brindar a nuestros clientes una experiencia
+                        única a través del sabor y aroma del café.
+                    </p>
+
+                    <p>
+                        Nuestro proyecto nace de la pasión por ofrecer productos
+                        elaborados con ingredientes seleccionados cuidadosamente,
+                        garantizando calidad y satisfacción en cada visita.
+                    </p>
+
+                    <p>
+                        Buscamos crear un ambiente cómodo y acogedor para
+                        estudiantes, trabajadores, familias y amigos.
+                    </p>
+
+                </article>
+
+                <div class="col-md-6 text-center">
+
+                    <img src="https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=800"
+                        class="img-fluid rounded shadow"
+                        alt="Cafetería">
+
+                </div>
+
+            </div>
+
         </section>
 
-        <section id="productos">
-            <h2>Servicios o Productos</h2>
+        <!-- PRODUCTOS -->
+        <section id="productos" class="container my-5">
 
-            <ul>
-                <li>Café americano</li>
-                <li>Cappuccino</li>
-                <li>Latte</li>
-                <li>Mocaccino</li>
-                <li>Té y bebidas calientes</li>
-                <li>Jugos naturales</li>
-                <li>Pasteles y postres</li>
-                <li>Servicio para reuniones y eventos</li>
-            </ul>
+            <h2 class="titulo-seccion text-center">
+                Servicios y Productos
+            </h2>
+
+            <div class="row">
+
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5>Café Americano</h5>
+                            <p>Café tradicional con aroma intenso.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5>Cappuccino</h5>
+                            <p>Perfecta combinación de café y espuma.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5>Jugos Naturales</h5>
+                            <p>Preparados con frutas frescas.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5>Postres</h5>
+                            <p>Pasteles y acompañamientos deliciosos.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </section>
 
-        <section id="contacto">
-            <h2>Contacto</h2>
+        <!-- VIDEO -->
+        <section class="container my-5">
 
-            <p><strong>Correo:</strong> aromadecafe@gmail.com</p>
-            <p><strong>Teléfono:</strong> 0987654321</p>
-            <p><strong>Dirección:</strong> Zumba, Chinchipe, Ecuador</p>
-
-            <p>
-                <a href="https://www.facebook.com" target="_blank">Facebook</a> |
-                <a href="https://www.instagram.com" target="_blank">Instagram</a> |
-                <a href="https://www.tiktok.com" target="_blank">TikTok</a>
-            </p>
-        </section>
-
-        <section>
-            <h2>Video Relacionado</h2>
+            <h2 class="titulo-seccion text-center">
+                Video Relacionado
+            </h2>
 
             <iframe src="https://www.youtube.com/embed/vFcS080VYQ0"
                 title="Video sobre café"
                 allowfullscreen>
             </iframe>
+
         </section>
 
-        <aside>
-            <h3>Promociones y Horarios</h3>
+        <!-- CONTACTO -->
+        <section id="contacto" class="container my-5">
+
+            <h2 class="titulo-seccion text-center">
+                Contáctanos
+            </h2>
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <form>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text"
+                                class="form-control"
+                                placeholder="Ingrese su nombre">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Correo Electrónico</label>
+                            <input type="email"
+                                class="form-control"
+                                placeholder="ejemplo@gmail.com">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Asunto</label>
+                            <input type="text"
+                                class="form-control"
+                                placeholder="Ingrese el asunto">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mensaje</label>
+                            <textarea class="form-control"
+                                rows="5"></textarea>
+                        </div>
+
+                        <button class="btn btn-cafe">
+                            Enviar Mensaje
+                        </button>
+
+                    </form>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <div class="p-4">
+
+                        <h4>Información de Contacto</h4>
+
+                        <p><strong>Correo:</strong> aromadecafe@gmail.com</p>
+
+                        <p><strong>Teléfono:</strong> 0982587457</p>
+
+                        <p><strong>Dirección:</strong> Zumba, Chinchipe, Ecuador</p>
+
+                        <a href="mailto:aromadecafe@gmail.com"
+                            class="btn btn-danger m-1">
+                            Correo
+                        </a>
+
+                        <a href="https://www.facebook.com"
+                            target="_blank"
+                            class="btn btn-primary m-1">
+                            Facebook
+                        </a>
+
+                        <a href="https://www.instagram.com"
+                            target="_blank"
+                            class="btn btn-warning m-1">
+                            Instagram
+                        </a>
+
+                        <a href="https://maps.google.com"
+                            target="_blank"
+                            class="btn btn-success m-1">
+                            Ubicación
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ASIDE -->
+        <aside class="container p-3 my-4">
+
+            <h4>Promociones y Horarios</h4>
 
             <p>
-                ☕ Promoción especial: Compra 2 cappuccinos y recibe un postre gratis.
+                ☕ Compra 2 cappuccinos y recibe un postre gratis.
             </p>
 
             <p>
-                🕒 Horario de atención:
-                Lunes a Domingo de 08:00 a 20:00.
+                🕒 Lunes a Domingo de 08:00 a 20:00.
             </p>
+
         </aside>
 
     </main>
 
+    <!-- FOOTER -->
     <footer>
         <p>
             Shirley Mileni Peñarreta Montenegro |
@@ -193,6 +409,9 @@
             2026
         </p>
     </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 
