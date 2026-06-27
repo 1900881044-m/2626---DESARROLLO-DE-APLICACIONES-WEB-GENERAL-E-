@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Cafetería Aroma de Café</title>
 
     <!-- Bootstrap CSS -->
@@ -78,7 +76,6 @@
             border-radius: 10px;
         }
 
-        /* Media Query */
         @media (max-width: 768px) {
             header h1 {
                 font-size: 2rem;
@@ -123,7 +120,6 @@
             <button class="navbar-toggler" type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#menu">
-
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -169,8 +165,7 @@
                     <p>
                         Somos una cafetería dedicada a brindar experiencias únicas
                         a través de bebidas elaboradas con ingredientes de calidad,
-                        un ambiente acogedor y una atención personalizada para todos
-                        nuestros clientes.
+                        un ambiente acogedor y una atención personalizada.
                     </p>
 
                     <a href="#contacto" class="btn btn-cafe">
@@ -201,19 +196,12 @@
 
                     <p>
                         Cafetería Aroma de Café es un emprendimiento creado con el
-                        objetivo de brindar a nuestros clientes una experiencia
-                        única a través del sabor y aroma del café.
+                        objetivo de brindar experiencias únicas a nuestros clientes.
                     </p>
 
                     <p>
                         Nuestro proyecto nace de la pasión por ofrecer productos
-                        elaborados con ingredientes seleccionados cuidadosamente,
-                        garantizando calidad y satisfacción en cada visita.
-                    </p>
-
-                    <p>
-                        Buscamos crear un ambiente cómodo y acogedor para
-                        estudiantes, trabajadores, familias y amigos.
+                        elaborados con ingredientes seleccionados cuidadosamente.
                     </p>
 
                 </article>
@@ -297,84 +285,69 @@
         <section id="contacto" class="container my-5">
 
             <h2 class="titulo-seccion text-center">
-                Contáctanos
+                Registro de Solicitudes
             </h2>
 
             <div class="row">
 
+                <!-- FORMULARIO -->
                 <div class="col-md-6">
 
-                    <form>
+                    <form id="formSolicitud">
 
                         <div class="mb-3">
                             <label class="form-label">Nombre</label>
                             <input type="text"
+                                id="nombre"
                                 class="form-control"
-                                placeholder="Ingrese su nombre">
+                                placeholder="Ingrese su nombre"
+                                required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Correo Electrónico</label>
                             <input type="email"
+                                id="correo"
                                 class="form-control"
-                                placeholder="ejemplo@gmail.com">
+                                placeholder="ejemplo@gmail.com"
+                                required>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Asunto</label>
+                            <label class="form-label">Producto Solicitado</label>
                             <input type="text"
+                                id="producto"
                                 class="form-control"
-                                placeholder="Ingrese el asunto">
+                                placeholder="Ingrese el producto"
+                                required>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Mensaje</label>
-                            <textarea class="form-control"
-                                rows="5"></textarea>
+                            <textarea id="mensaje"
+                                class="form-control"
+                                rows="5"
+                                required></textarea>
                         </div>
 
-                        <button class="btn btn-cafe">
-                            Enviar Mensaje
+                        <button type="submit" class="btn btn-cafe">
+                            Registrar Solicitud
                         </button>
 
                     </form>
 
                 </div>
 
+                <!-- LISTA DINÁMICA -->
                 <div class="col-md-6">
 
-                    <div class="p-4">
+                    <h4>Solicitudes Registradas</h4>
 
-                        <h4>Información de Contacto</h4>
+                    <div id="listaSolicitudes">
 
-                        <p><strong>Correo:</strong> aromadecafe@gmail.com</p>
-
-                        <p><strong>Teléfono:</strong> 0982587457</p>
-
-                        <p><strong>Dirección:</strong> Zumba, Chinchipe, Ecuador</p>
-
-                        <a href="mailto:aromadecafe@gmail.com"
-                            class="btn btn-danger m-1">
-                            Correo
-                        </a>
-
-                        <a href="https://www.facebook.com"
-                            target="_blank"
-                            class="btn btn-primary m-1">
-                            Facebook
-                        </a>
-
-                        <a href="https://www.instagram.com"
-                            target="_blank"
-                            class="btn btn-warning m-1">
-                            Instagram
-                        </a>
-
-                        <a href="https://maps.google.com"
-                            target="_blank"
-                            class="btn btn-success m-1">
-                            Ubicación
-                        </a>
+                        <div class="alert alert-info">
+                            No existen solicitudes registradas.
+                        </div>
 
                     </div>
 
@@ -389,13 +362,9 @@
 
             <h4>Promociones y Horarios</h4>
 
-            <p>
-                ☕ Compra 2 cappuccinos y recibe un postre gratis.
-            </p>
+            <p>☕ Compra 2 cappuccinos y recibe un postre gratis.</p>
 
-            <p>
-                🕒 Lunes a Domingo de 08:00 a 20:00.
-            </p>
+            <p>🕒 Lunes a Domingo de 08:00 a 20:00.</p>
 
         </aside>
 
@@ -412,6 +381,45 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JAVASCRIPT -->
+    <script>
+
+        const formulario = document.getElementById("formSolicitud");
+        const lista = document.getElementById("listaSolicitudes");
+
+        formulario.addEventListener("submit", function (e) {
+
+            e.preventDefault();
+
+            const nombre = document.getElementById("nombre").value;
+            const correo = document.getElementById("correo").value;
+            const producto = document.getElementById("producto").value;
+            const mensaje = document.getElementById("mensaje").value;
+
+            if (lista.innerHTML.includes("No existen")) {
+                lista.innerHTML = "";
+            }
+
+            const tarjeta = document.createElement("div");
+
+            tarjeta.className = "card mb-3";
+
+            tarjeta.innerHTML = `
+                <div class="card-body">
+                    <h5>${nombre}</h5>
+                    <p><strong>Correo:</strong> ${correo}</p>
+                    <p><strong>Producto:</strong> ${producto}</p>
+                    <p><strong>Mensaje:</strong> ${mensaje}</p>
+                </div>
+            `;
+
+            lista.appendChild(tarjeta);
+            formulario.reset();
+
+        });
+
+    </script>
 
 </body>
 
