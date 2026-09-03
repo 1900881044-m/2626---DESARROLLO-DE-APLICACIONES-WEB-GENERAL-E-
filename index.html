@@ -1,71 +1,122 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema Integrador{% endblock %}</title>
-    
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- CSS personalizado -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-cubes"></i> Sistema Integrador
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('productos') }}">Productos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('clientes') }}">Clientes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('proveedores') }}">Proveedores</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('facturacion') }}">Facturación</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+import os
+import sqlite3
+from flask import Flask, flash, redirect, render_template, request, url_for
+from flask_wtf import FlaskForm
+from wtforms import FloatField, IntegerField, StringField
+from wtforms.validators import DataRequired, NumberRange
 
-    <!-- Header -->
-    <header class="bg-primary text-white py-4">
-        <div class="container">
-            <h1>{% block header %}Bienvenido al Sistema{% endblock %}</h1>
-        </div>
-    </header>
+# Inicialización de la aplicación Flask
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'clave_secreta_proyecto_integrador_2026'
 
-    <!-- Main Content -->
-    <main class="container my-4">
-        {% block content %}{% endblock %}
-    </main>
+# Configuración de la ruta de la base de datos dentro de la carpeta 'data'
+DATABASE = os.path.join('data', 'ferreteria.db')
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-3 mt-5">
-        <div class="container">
-            <p class="mb-0">&copy; 2026 Sistema Integrador - Desarrollado por Shirley Mileni Penarreta Monte</p>
-        </div>
-    </footer>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- JavaScript personalizado -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+def get_db_connection():
+  """Establece la conexión con la base de datos SQLite
+
+  y configura row_factory para acceder a las columnas por nombre.
+  """
+  conn = sqlite3.connect(DATABASE)
+  conn.row_factory = sqlite3.Row
+  return conn
+
+
+def init_db():
+  """Crea la carpeta 'data' si no existe y la tabla 'productos'"""
+  os.makedirs('data', exist_ok=True)
+  conn = get_db_connection()
+  conn.execute('''
+        CREATE TABLE IF NOT EXISTS productos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            precio REAL NOT NULL,
+            stock INTEGER NOT NULL
+        )
+    ''')
+  conn.commit()
+  conn.close()
+
+
+# ==========================================
+# DEFINICIÓN DE FORMULARIOS (Flask-WTF)
+# ==========================================
+
+
+class ProductoForm(FlaskForm):
+  nombre = StringField('Nombre del Producto', validators=[DataRequired()])
+  precio = FloatField(
+      'Precio', validators=[DataRequired(), NumberRange(min=0.01)]
+  )
+  stock = IntegerField('Stock', validators=[DataRequired(), NumberRange(min=0)])
+
+
+# ==========================================
+# RUTAS DE LA APLICACIÓN
+# ==========================================
+
+
+@app.route('/')
+def index():
+  return render_template('index.html')
+
+
+# MÓDULO DE PRODUCTOS (Flujo completo: INSERT -> SELECT -> Tabla HTML)
+@app.route('/productos')
+def listar_productos():
+  # SELECT: Recuperar todos los productos registrados de la base de datos
+  conn = get_db_connection()
+  productos = conn.execute('SELECT * FROM productos').fetchall()
+  conn.close()
+  return render_template('productos.html', productos=productos)
+
+
+@app.route('/productos/nuevo', methods=['GET', 'POST'])
+def nuevo_producto():
+  form = ProductoForm()
+
+  # Validación del lado del servidor (Flask-WTF + Método POST)
+  if form.validate_on_submit():
+    nombre = form.nombre.data
+    precio = form.precio.data
+    stock = form.stock.data
+
+    # INSERT: Almacenar de forma persistente en SQLite
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)',
+        (nombre, precio, stock),
+    )
+    conn.commit()
+    conn.close()
+
+    flash('¡Producto registrado y guardado exitosamente en SQLite!', 'success')
+    return redirect(url_for('listar_productos'))
+
+  return render_template('formulario_producto.html', form=form)
+
+
+# Rutas preparadas para los demás módulos (Clientes, Proveedores, Facturación)
+@app.route('/clientes')
+def listar_clientes():
+  return render_template('clientes.html')
+
+
+@app.route('/proveedores')
+def listar_proveedores():
+  return render_template('proveedores.html')
+
+
+@app.route('/facturacion')
+def facturacion():
+  return render_template('facturacion.html')
+
+
+# ==========================================
+# EJECUCIÓN DEL SERVIDOR
+# ==========================================
+if __name__ == '__main__':
+  # Inicializar la base de datos antes de arrancar el servidor
+  init_db()
+  app.run(debug=True)
