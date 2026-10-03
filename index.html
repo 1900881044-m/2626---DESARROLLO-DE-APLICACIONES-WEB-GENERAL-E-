@@ -1,250 +1,142 @@
 import os
-from flask import Flask, render_template, redirect, url_for, flash, request
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_wtf import CSRFProtect
-from werkzeug.security import check_password_hash
+from functools import wraps
+from flask import Flask, render_template, redirect, url_for, flash, session, request
+from flask_wtf.csrf import CSRFProtect
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
-from db import get_db, init_db
-from forms import LoginForm, ClienteForm, ProductoForm, VentaForm
 
+# Importación de formularios personalizados
+from forms.login_form import LoginForm
+from forms.categoria_form import CategoriaForm
+from forms.producto_form import ProductoForm
+
+# Cargar variables de entorno
 load_dotenv()
+
+# Configuración de Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'cambia-esta-clave-local')
-CSRFProtect(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Debes iniciar sesión para acceder.'
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "clave-secreta-desarrollo")
+app.config["DATABASE_URL"] = os.environ.get("DATABASE_URL")
 
-class User(UserMixin):
-    def __init__(self, user_id, username, password_hash):
-        self.id = user_id
-        self.username = username
-        self.password_hash = password_hash
+# Protección CSRF
+csrf = CSRFProtect(app)
 
-@login_manager.user_loader
-def load_user(user_id):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT id, username, password_hash FROM usuarios WHERE id = %s', (user_id,))
-            r = cur.fetchone()
-            return User(*r) if r else None
-    finally:
-        conn.close()
+# Conexión con PostgreSQL
+def get_connection():
+    database_url = app.config["DATABASE_URL"]
+    if not database_url:
+        raise RuntimeError("No se encontró DATABASE_URL.")
+    return psycopg2.connect(database_url)
 
-@app.route('/')
+# Decorador de Login Requerido
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if "usuario_id" not in session:
+            flash("Debe iniciar sesión para acceder.", "warning")
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped_view
+
+# Página Principal
+@app.route("/")
 def index():
-    return redirect(url_for('dashboard' if current_user.is_authenticated else 'login'))
+    return render_template("index.html")
 
-@app.route('/login', methods=['GET','POST'])
+# Login
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+    if "usuario_id" in session:
+        return redirect(url_for("productos"))
+    
     form = LoginForm()
     if form.validate_on_submit():
-        conn = get_db()
+        correo = form.correo.data.strip().lower()
+        password = form.password.data
+        connection = None
         try:
-            with conn.cursor() as cur:
-                cur.execute('SELECT id, username, password_hash FROM usuarios WHERE username = %s', (form.username.data.strip(),))
-                r = cur.fetchone()
-            if r and check_password_hash(r[2], form.password.data):
-                login_user(User(*r))
-                flash('Inicio de sesión correcto.', 'success')
-                return redirect(url_for('dashboard'))
-            flash('Usuario o contraseña incorrectos.', 'danger')
+            connection = get_connection()
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT id, nombre, correo, password FROM usuarios WHERE correo = %s", (correo,))
+                usuario = cursor.fetchone()
+                
+                if usuario and usuario["password"] == password:
+                    session.clear()
+                    session["usuario_id"] = usuario["id"]
+                    session["usuario_nombre"] = usuario["nombre"]
+                    session["usuario_correo"] = usuario["correo"]
+                    flash("Inicio de sesión correcto.", "success")
+                    return redirect(url_for("productos"))
+                else:
+                    flash("Correo o contraseña incorrectos.", "danger")
+        except Exception as error:
+            print("Error de login:", error)
+            flash("Ocurrió un error al iniciar sesión.", "danger")
         finally:
-            conn.close()
-    return render_template('login.html', form=form)
+            if connection:
+                connection.close()
+                
+    return render_template("login.html", form=form)
 
-@app.route('/logout')
-@login_required
+# Cerrar Sesión
+@app.route("/logout")
 def logout():
-    logout_user(); flash('Sesión cerrada correctamente.', 'info'); return redirect(url_for('login'))
+    session.clear()
+    flash("Sesión cerrada correctamente.", "info")
+    return redirect(url_for("login"))
 
-@app.route('/dashboard')
+# Listar Categorías
+@app.route("/categorias")
 @login_required
-def dashboard():
-    conn=get_db()
+def categorias():
+    connection = None
     try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT COUNT(*) FROM clientes'); clientes=cur.fetchone()[0]
-            cur.execute('SELECT COUNT(*) FROM productos'); productos=cur.fetchone()[0]
-            cur.execute('SELECT COUNT(*) FROM ventas'); ventas=cur.fetchone()[0]
-    finally: conn.close()
-    return render_template('dashboard.html', total_clientes=clientes, total_productos=productos, total_ventas=ventas)
+        connection = get_connection()
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("SELECT id, nombre, descripcion FROM categorias ORDER BY id DESC")
+            categorias = cursor.fetchall()
+            return render_template("categorias/lista.html", categorias=categorias)
+    except Exception as error:
+        print("Error:", error)
+        flash("No se pudieron cargar las categorías.", "danger")
+        return redirect(url_for("productos"))
+    finally:
+        if connection:
+            connection.close()
 
-# CLIENTES CRUD
-@app.route('/clientes')
+# Crear Categoría
+@app.route("/categorias/nueva", methods=["GET", "POST"])
 @login_required
-def clientes():
-    conn=get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT id,nombre,apellido,cedula,telefono,email FROM clientes ORDER BY id DESC')
-            rows=cur.fetchall()
-    finally: conn.close()
-    return render_template('clientes/lista.html', clientes=rows)
-
-@app.route('/clientes/nuevo', methods=['GET','POST'])
-@login_required
-def nuevo_cliente():
-    form=ClienteForm()
+def nueva_categoria():
+    form = CategoriaForm()
     if form.validate_on_submit():
-        conn=get_db()
+        nombre = form.nombre.data.strip()
+        descripcion = form.descripcion.data.strip() if form.descripcion.data else ""
+        connection = None
         try:
-            with conn.cursor() as cur:
-                cur.execute('INSERT INTO clientes(nombre,apellido,cedula,telefono,email) VALUES(%s,%s,%s,%s,%s)', (form.nombre.data.strip(),form.apellido.data.strip(),form.cedula.data.strip(),form.telefono.data.strip(),form.email.data.strip() if form.email.data else None))
-            conn.commit(); flash('Cliente registrado correctamente.','success'); return redirect(url_for('clientes'))
-        except Exception:
-            conn.rollback(); flash('No se pudo registrar el cliente. Verifica que la cédula no esté repetida.','danger')
-        finally: conn.close()
-    return render_template('clientes/formulario.html', form=form, titulo='Nuevo cliente')
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO categorias (nombre, descripcion) VALUES (%s, %s)",
+                    (nombre, descripcion)
+                )
+                connection.commit()
+                flash("Categoría creada correctamente.", "success")
+                return redirect(url_for("categorias"))
+        except psycopg2.errors.UniqueViolation:
+            if connection:
+                connection.rollback()
+            flash("La categoría ya existe.", "warning")
+        except Exception as error:
+            if connection:
+                connection.rollback()
+            print("Error:", error)
+            flash("No se pudo crear la categoría.", "danger")
+        finally:
+            if connection:
+                connection.close()
+    return render_template("categorias/formulario.html", form=form, titulo="Nueva Categoría")
 
-@app.route('/clientes/editar/<int:id>', methods=['GET','POST'])
-@login_required
-def editar_cliente(id):
-    conn=get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT id,nombre,apellido,cedula,telefono,email FROM clientes WHERE id=%s',(id,)); row=cur.fetchone()
-    finally: conn.close()
-    if not row: flash('Cliente no encontrado.','warning'); return redirect(url_for('clientes'))
-    form=ClienteForm()
-    if request.method=='GET':
-        form.nombre.data,form.apellido.data,form.cedula.data,form.telefono.data,form.email.data=row[1],row[2],row[3],row[4],row[5] or ''
-    if form.validate_on_submit():
-        conn=get_db()
-        try:
-            with conn.cursor() as cur:
-                cur.execute('UPDATE clientes SET nombre=%s,apellido=%s,cedula=%s,telefono=%s,email=%s WHERE id=%s',(form.nombre.data.strip(),form.apellido.data.strip(),form.cedula.data.strip(),form.telefono.data.strip(),form.email.data.strip() if form.email.data else None,id))
-            conn.commit(); flash('Cliente actualizado correctamente.','success'); return redirect(url_for('clientes'))
-        except Exception:
-            conn.rollback(); flash('No se pudo actualizar el cliente.','danger')
-        finally: conn.close()
-    return render_template('clientes/formulario.html', form=form, titulo='Editar cliente')
-
-@app.post('/clientes/eliminar/<int:id>')
-@login_required
-def eliminar_cliente(id):
-    conn=get_db()
-    try:
-        with conn.cursor() as cur: cur.execute('DELETE FROM clientes WHERE id=%s',(id,))
-        conn.commit(); flash('Cliente eliminado correctamente.','success')
-    except Exception:
-        conn.rollback(); flash('No se pudo eliminar el cliente.','danger')
-    finally: conn.close()
-    return redirect(url_for('clientes'))
-
-# PRODUCTOS CRUD
-@app.route('/productos')
-@login_required
-def productos():
-    conn=get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT id,nombre,descripcion,precio,stock FROM productos ORDER BY id DESC'); rows=cur.fetchall()
-    finally: conn.close()
-    return render_template('productos/lista.html', productos=rows)
-
-@app.route('/productos/nuevo', methods=['GET','POST'])
-@login_required
-def nuevo_producto():
-    form=ProductoForm()
-    if form.validate_on_submit():
-        conn=get_db()
-        try:
-            with conn.cursor() as cur: cur.execute('INSERT INTO productos(nombre,descripcion,precio,stock) VALUES(%s,%s,%s,%s)',(form.nombre.data.strip(),form.descripcion.data.strip() if form.descripcion.data else None,form.precio.data,form.stock.data))
-            conn.commit(); flash('Producto registrado correctamente.','success'); return redirect(url_for('productos'))
-        except Exception:
-            conn.rollback(); flash('No se pudo registrar el producto.','danger')
-        finally: conn.close()
-    return render_template('productos/formulario.html', form=form, titulo='Nuevo producto')
-
-@app.route('/productos/editar/<int:id>', methods=['GET','POST'])
-@login_required
-def editar_producto(id):
-    conn=get_db()
-    try:
-        with conn.cursor() as cur: cur.execute('SELECT id,nombre,descripcion,precio,stock FROM productos WHERE id=%s',(id,)); row=cur.fetchone()
-    finally: conn.close()
-    if not row: flash('Producto no encontrado.','warning'); return redirect(url_for('productos'))
-    form=ProductoForm()
-    if request.method=='GET': form.nombre.data,form.descripcion.data,form.precio.data,form.stock.data=row[1],row[2] or '',row[3],row[4]
-    if form.validate_on_submit():
-        conn=get_db()
-        try:
-            with conn.cursor() as cur: cur.execute('UPDATE productos SET nombre=%s,descripcion=%s,precio=%s,stock=%s WHERE id=%s',(form.nombre.data.strip(),form.descripcion.data.strip() if form.descripcion.data else None,form.precio.data,form.stock.data,id))
-            conn.commit(); flash('Producto actualizado correctamente.','success'); return redirect(url_for('productos'))
-        except Exception:
-            conn.rollback(); flash('No se pudo actualizar el producto.','danger')
-        finally: conn.close()
-    return render_template('productos/formulario.html', form=form, titulo='Editar producto')
-
-@app.post('/productos/eliminar/<int:id>')
-@login_required
-def eliminar_producto(id):
-    conn=get_db()
-    try:
-        with conn.cursor() as cur: cur.execute('DELETE FROM productos WHERE id=%s',(id,))
-        conn.commit(); flash('Producto eliminado correctamente.','success')
-    except Exception:
-        conn.rollback(); flash('No se pudo eliminar el producto.','danger')
-    finally: conn.close()
-    return redirect(url_for('productos'))
-
-# VENTAS + JOIN
-@app.route('/ventas')
-@login_required
-def ventas():
-    conn=get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('''SELECT v.id,v.fecha,c.nombre || ' ' || c.apellido AS cliente,p.nombre AS producto,v.cantidad,p.precio,(v.cantidad*p.precio) AS total FROM ventas v LEFT JOIN clientes c ON c.id=v.cliente_id LEFT JOIN productos p ON p.id=v.producto_id ORDER BY v.id DESC''')
-            rows=cur.fetchall()
-    finally: conn.close()
-    return render_template('ventas/lista.html', ventas=rows)
-
-@app.route('/ventas/nueva', methods=['GET','POST'])
-@login_required
-def nueva_venta():
-    form=VentaForm(); conn=get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id,nombre || ' ' || apellido FROM clientes ORDER BY nombre,apellido"); clientes=cur.fetchall()
-            cur.execute('SELECT id,nombre FROM productos WHERE stock>0 ORDER BY nombre'); productos=cur.fetchall()
-    finally: conn.close()
-    form.cliente_id.choices=[(x[0],x[1]) for x in clientes]; form.producto_id.choices=[(x[0],x[1]) for x in productos]
-    if form.validate_on_submit():
-        conn=get_db()
-        try:
-            with conn.cursor() as cur:
-                cur.execute('SELECT stock FROM productos WHERE id=%s FOR UPDATE',(form.producto_id.data,)); p=cur.fetchone()
-                if not p: flash('Producto no encontrado.','danger'); return render_template('ventas/formulario.html',form=form,titulo='Nueva venta')
-                if p[0] < form.cantidad.data: flash(f'Stock insuficiente. Disponible: {p[0]}.','danger'); return render_template('ventas/formulario.html',form=form,titulo='Nueva venta')
-                cur.execute('INSERT INTO ventas(cliente_id,producto_id,cantidad) VALUES(%s,%s,%s)',(form.cliente_id.data,form.producto_id.data,form.cantidad.data))
-                cur.execute('UPDATE productos SET stock=stock-%s WHERE id=%s',(form.cantidad.data,form.producto_id.data))
-            conn.commit(); flash('Venta registrada correctamente.','success'); return redirect(url_for('ventas'))
-        except Exception:
-            conn.rollback(); flash('No se pudo registrar la venta.','danger')
-        finally: conn.close()
-    return render_template('ventas/formulario.html',form=form,titulo='Nueva venta')
-
-@app.post('/ventas/eliminar/<int:id>')
-@login_required
-def eliminar_venta(id):
-    conn=get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute('SELECT producto_id,cantidad FROM ventas WHERE id=%s',(id,)); v=cur.fetchone()
-            if not v: flash('Venta no encontrada.','warning'); return redirect(url_for('ventas'))
-            if v[0] is not None: cur.execute('UPDATE productos SET stock=stock+%s WHERE id=%s',(v[1],v[0]))
-            cur.execute('DELETE FROM ventas WHERE id=%s',(id,))
-        conn.commit(); flash('Venta eliminada y stock restaurado.','success')
-    except Exception:
-        conn.rollback(); flash('No se pudo eliminar la venta.','danger')
-    finally: conn.close()
-    return redirect(url_for('ventas'))
-
-with app.app_context(): init_db()
-
-if __name__=='__main__': app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
